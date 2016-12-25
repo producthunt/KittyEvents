@@ -7,7 +7,6 @@ describe KittyEvents do
 
   after(:each) do
     # Don't leak settings across tests
-    described_class.class_variable_set :@@events, []
     described_class.class_variable_set :@@handlers, {}
   end
 
