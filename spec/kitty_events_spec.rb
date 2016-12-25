@@ -94,8 +94,8 @@ describe KittyEvents do
 
       described_class.handle(:vote, some_object)
 
-      expect(some_handler).to have_received(:perform_later).with(:vote, some_object)
-      expect(another_handler).to have_received(:perform_later).with(:vote, some_object)
+      expect(some_handler).to have_received(:perform_later).with(some_object)
+      expect(another_handler).to have_received(:perform_later).with(some_object)
     end
   end
 end

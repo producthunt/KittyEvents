@@ -42,7 +42,7 @@ module KittyEvents
 
   def self.handle(event, object)
     (handlers[event.to_sym] || []).each do |handler|
-      handler.perform_later(event, object)
+      handler.perform_later(object)
     end
   end
 
