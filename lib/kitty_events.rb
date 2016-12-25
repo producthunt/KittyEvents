@@ -27,14 +27,14 @@ module KittyEvents
   end
 
   def self.subscribe(event, handler)
-    registered_event?(event)
+    ensure_registered_event(event)
 
     handlers[event] ||= []
     handlers[event] << handler
   end
 
   def self.trigger(event, object)
-    registered_event?(event)
+    ensure_registered_event(event)
 
     KittyEvents::HandleWorker.perform_later(event.to_s, object)
   end
@@ -45,8 +45,10 @@ module KittyEvents
     end
   end
 
-  def self.registered_event?(event)
-    return true if events.include? event
+  private
+
+  def self.ensure_registered_event(event)
+    return if events.include? event
     raise ArgumentError, "#{event} is not registered"
   end
 end
