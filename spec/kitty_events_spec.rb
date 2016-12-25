@@ -12,7 +12,7 @@ describe KittyEvents do
   end
 
   let(:some_handler) { class_double(ActiveJob::Base) }
-  let(:another_handler) { class_double(ActibeJob::Base) }
+  let(:another_handler) { class_double(ActiveJob::Base) }
   let(:some_object) { double('Some::Object') }
 
   describe '.register' do
