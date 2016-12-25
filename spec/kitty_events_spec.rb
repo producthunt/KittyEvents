@@ -21,6 +21,11 @@ describe KittyEvents do
       expect(described_class.events).to include(:vote)
     end
 
+    it 'handles event names passed as a string' do
+      described_class.register('post')
+      expect(described_class.events).to include(:post)
+    end
+
     it 'handles multiple events' do
       described_class.register(:vote, :post, :subscribe)
 

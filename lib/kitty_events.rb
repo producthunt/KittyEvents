@@ -20,7 +20,7 @@ module KittyEvents
 
   def self.register(*event_names)
     event_names.each do |event|
-      events << event
+      events << event.to_sym
     end
 
     events.uniq!
