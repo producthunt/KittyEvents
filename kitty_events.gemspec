@@ -6,8 +6,8 @@ require 'kitty_events/version'
 Gem::Specification.new do |spec|
   spec.name          = 'kitty_events'
   spec.version       = KittyEvents::VERSION
-  spec.authors       = ['Mike Coutermarsh']
-  spec.email         = ['coutermarsh.mike@gmail.com']
+  spec.authors       = ['Mike Coutermarsh', 'Radoslav Stankov']
+  spec.email         = ['coutermarsh.mike@gmail.com', 'rstankov@gmail.com']
 
   spec.summary       = 'Super simple event system on top of ActiveJob'
   spec.description   = 'Super simple event system on top of ActiveJob'
