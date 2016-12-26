@@ -21,23 +21,22 @@ describe KittyEvents do
     end
 
     it 'handles event names passed as a string' do
-      described_class.register('event')
-      expect(described_class.registered).to include(:event)
+      described_class.register('vote')
+      expect(described_class.registered).to include(:vote)
     end
 
     it 'handles multiple events' do
-      described_class.register(:vote, :post, :subscribe)
+      described_class.register(:vote)
+      described_class.register(:post, :subscribe)
 
-      expect(described_class.registered).to include(:vote)
-      expect(described_class.registered).to include(:post)
-      expect(described_class.registered).to include(:subscribe)
+      expect(described_class.registered.sort).to eq %i(vote post subscribe).sort
     end
 
     it 'does not add duplicates' do
       described_class.register(:vote)
       described_class.register(:vote)
 
-      expect(described_class.registered.length).to eq 1
+      expect(described_class.registered).to eq %i(vote)
     end
   end
 
