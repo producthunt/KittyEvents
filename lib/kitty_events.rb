@@ -10,7 +10,7 @@ require 'active_job'
 # Subscribe to this event:
 #   KittyEvents.subscribe(:upvote, Class::Of::EventHandler)
 #
-# An event handler is just a ActiveJob worker that implements .perform(event, object).
+# An event handler is just a ActiveJob worker that implements .perform(object).
 # When an event is triggered, It will fan out to all subscribers via ActiveJob
 module KittyEvents
   @@handlers = {}
