@@ -29,6 +29,8 @@ module KittyEvents
     end
 
     def subscribe(event, handler)
+      ensure_valid_handler handler
+
       handlers = handlers_for_event! event
       handlers << handler
     end
@@ -47,12 +49,16 @@ module KittyEvents
 
     private
 
+    def ensure_valid_handler(handler)
+      raise ArgumentError, "#{handler} has to respond to perform_later" unless handler.respond_to? :perform_later
+    end
+
     def handlers_for_event!(event)
       handlers_for_event(event) { raise ArgumentError, "#{event} is not registered" }
     end
 
     def handlers_for_event(event, &block)
-      handlers.fetch(event.to_sym, &block);
+      handlers.fetch(event.to_sym, &block)
     end
   end
 end

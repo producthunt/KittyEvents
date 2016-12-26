@@ -10,8 +10,8 @@ describe KittyEvents do
     described_class.class_variable_set :@@handlers, {}
   end
 
-  let(:some_handler) { class_double(ActiveJob::Base) }
-  let(:another_handler) { class_double(ActiveJob::Base) }
+  let(:some_handler) { class_double(ActiveJob::Base, perform_later: nil) }
+  let(:another_handler) { class_double(ActiveJob::Base, perform_later: nil) }
   let(:some_object) { double('Some::Object') }
 
   describe '.register' do
@@ -69,6 +69,12 @@ describe KittyEvents do
         described_class.subscribe(:fake_event, some_handler)
       end.to raise_error ArgumentError
     end
+
+    it 'raises an error when subscribing to invalid handler' do
+      expect do
+        described_class.subscribe(:vote, 'not a handler')
+      end.to raise_error ArgumentError
+    end
   end
 
   describe '.trigger' do
@@ -96,9 +102,6 @@ describe KittyEvents do
 
   describe '.handle' do
     it 'fans out event to each subscribed handler' do
-      allow(some_handler).to receive(:perform_later)
-      allow(another_handler).to receive(:perform_later)
-
       described_class.register(:vote)
       described_class.subscribe(:vote, some_handler)
       described_class.subscribe(:vote, another_handler)
