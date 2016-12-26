@@ -49,7 +49,7 @@ module KittyEvents
   private_class_method
 
   def self.ensure_registered_event(event)
-    return if events.include? event
+    return if events.include? event.to_sym
     raise ArgumentError, "#{event} is not registered"
   end
 end

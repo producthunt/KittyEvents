@@ -21,8 +21,8 @@ describe KittyEvents do
     end
 
     it 'handles event names passed as a string' do
-      described_class.register('post')
-      expect(described_class.events).to include(:post)
+      described_class.register('event')
+      expect(described_class.events).to include(:event)
     end
 
     it 'handles multiple events' do
@@ -71,6 +71,12 @@ describe KittyEvents do
       expect do
         described_class.trigger(:unregistered_event, some_handler)
       end.to raise_error ArgumentError
+    end
+
+    it 'handles event names pass as string' do
+      allow(KittyEvents::HandleWorker).to receive(:perform_later)
+      described_class.register :event
+      expect { described_class.trigger('event', some_handler) }.not_to raise_error
     end
 
     it 'enqueues a job to handle the event' do
