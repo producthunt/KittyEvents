@@ -36,7 +36,7 @@ module KittyEvents
     def trigger(event, object)
       handlers_for_event! event
 
-      KittyEvents::HandleWorker.perform_later(event.to_s, object)
+      self::HandleWorker.perform_later(event.to_s, object)
     end
 
     def handle(event, object)

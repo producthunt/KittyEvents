@@ -80,18 +80,18 @@ describe KittyEvents do
     end
 
     it 'handles event names pass as string' do
-      allow(KittyEvents::HandleWorker).to receive(:perform_later)
+      allow(described_class::HandleWorker).to receive(:perform_later)
       described_class.register :event
       expect { described_class.trigger('event', some_handler) }.not_to raise_error
     end
 
     it 'enqueues a job to handle the event' do
-      allow(KittyEvents::HandleWorker).to receive(:perform_later)
+      allow(described_class::HandleWorker).to receive(:perform_later)
 
       described_class.register(:vote)
       described_class.trigger(:vote, some_object)
 
-      expect(KittyEvents::HandleWorker).to have_received(:perform_later).with('vote', some_object)
+      expect(described_class::HandleWorker).to have_received(:perform_later).with('vote', some_object)
     end
   end
 
