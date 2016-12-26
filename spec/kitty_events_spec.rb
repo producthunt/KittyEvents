@@ -17,27 +17,27 @@ describe KittyEvents do
   describe '.register' do
     it 'adds event to list of events' do
       described_class.register(:vote)
-      expect(described_class.events).to include(:vote)
+      expect(described_class.registered).to include(:vote)
     end
 
     it 'handles event names passed as a string' do
       described_class.register('event')
-      expect(described_class.events).to include(:event)
+      expect(described_class.registered).to include(:event)
     end
 
     it 'handles multiple events' do
       described_class.register(:vote, :post, :subscribe)
 
-      expect(described_class.events).to include(:vote)
-      expect(described_class.events).to include(:post)
-      expect(described_class.events).to include(:subscribe)
+      expect(described_class.registered).to include(:vote)
+      expect(described_class.registered).to include(:post)
+      expect(described_class.registered).to include(:subscribe)
     end
 
     it 'does not add duplicates' do
       described_class.register(:vote)
       described_class.register(:vote)
 
-      expect(described_class.events.length).to eq 1
+      expect(described_class.registered.length).to eq 1
     end
   end
 

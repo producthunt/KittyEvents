@@ -24,6 +24,10 @@ module KittyEvents
       end
     end
 
+    def registered
+      handlers.keys
+    end
+
     def subscribe(event, handler)
       handlers = handlers_for_event! event
       handlers << handler
@@ -33,10 +37,6 @@ module KittyEvents
       handlers_for_event! event
 
       KittyEvents::HandleWorker.perform_later(event.to_s, object)
-    end
-
-    def events
-      handlers.keys
     end
 
     def handle(event, object)
