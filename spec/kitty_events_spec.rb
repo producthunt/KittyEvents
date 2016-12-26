@@ -78,6 +78,12 @@ describe KittyEvents do
   end
 
   describe '.trigger' do
+    before do
+      allow(described_class::HandleWorker).to receive(:perform_later)
+
+      described_class.register :vote
+    end
+
     it 'raises an error if event does not exist' do
       expect do
         described_class.trigger(:unregistered_event, some_handler)
@@ -85,18 +91,13 @@ describe KittyEvents do
     end
 
     it 'handles event names pass as string' do
-      allow(described_class::HandleWorker).to receive(:perform_later)
-      described_class.register :event
-      expect { described_class.trigger('event', some_handler) }.not_to raise_error
+      expect { described_class.trigger('vote', some_handler) }.not_to raise_error
     end
 
     it 'enqueues a job to handle the event' do
-      allow(described_class::HandleWorker).to receive(:perform_later)
+      described_class.trigger(:vote, some: some_object)
 
-      described_class.register(:vote)
-      described_class.trigger(:vote, some_object)
-
-      expect(described_class::HandleWorker).to have_received(:perform_later).with('vote', some_object)
+      expect(described_class::HandleWorker).to have_received(:perform_later).with('vote', some: some_object)
     end
   end
 
