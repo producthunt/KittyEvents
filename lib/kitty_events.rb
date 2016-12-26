@@ -10,46 +10,55 @@ require 'active_job'
 # Subscribe to this event:
 #   KittyEvents.subscribe(:upvote, Class::Of::EventHandler)
 #
-# An event handler is just a ActiveJob worker that implements .perform(event, object).
+# An event handler is just a ActiveJob worker that implements .perform(object).
 # When an event is triggered, It will fan out to all subscribers via ActiveJob
 module KittyEvents
   @@handlers = {}
 
   mattr_reader :handlers
 
-  def self.register(*event_names)
-    event_names.each do |name|
-      handlers[name.to_sym] ||= []
+  class << self
+    def register(*event_names)
+      event_names.each do |name|
+        handlers[name.to_sym] ||= []
+      end
     end
-  end
 
-  def self.subscribe(event, handler)
-    ensure_registered_event(event)
-
-    handlers[event] ||= []
-    handlers[event] << handler
-  end
-
-  def self.trigger(event, object)
-    ensure_registered_event(event)
-
-    KittyEvents::HandleWorker.perform_later(event.to_s, object)
-  end
-
-  def self.events
-    handlers.keys
-  end
-
-  def self.handle(event, object)
-    (handlers[event.to_sym] || []).each do |handler|
-      handler.perform_later(object)
+    def registered
+      handlers.keys
     end
-  end
 
-  private_class_method
+    def subscribe(event, handler)
+      ensure_valid_handler handler
 
-  def self.ensure_registered_event(event)
-    return if events.include? event
-    raise ArgumentError, "#{event} is not registered"
+      handlers = handlers_for_event! event
+      handlers << handler
+    end
+
+    def trigger(event, object)
+      handlers_for_event! event
+
+      self::HandleWorker.perform_later(event.to_s, object)
+    end
+
+    def handle(event, object)
+      handlers_for_event(event) { [] }.each do |handler|
+        handler.perform_later(object)
+      end
+    end
+
+    private
+
+    def ensure_valid_handler(handler)
+      raise ArgumentError, "#{handler} has to respond to perform_later" unless handler.respond_to? :perform_later
+    end
+
+    def handlers_for_event!(event)
+      handlers_for_event(event) { raise ArgumentError, "#{event} is not registered" }
+    end
+
+    def handlers_for_event(event, &block)
+      handlers.fetch(event.to_sym, &block)
+    end
   end
 end
