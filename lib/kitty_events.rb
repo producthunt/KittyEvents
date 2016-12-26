@@ -24,14 +24,12 @@ module KittyEvents
   end
 
   def self.subscribe(event, handler)
-    ensure_registered_event(event)
-
-    handlers[event.to_sym] ||= []
-    handlers[event.to_sym] << handler
+    handlers = handlers_for_event! event
+    handlers << handler
   end
 
   def self.trigger(event, object)
-    ensure_registered_event(event)
+    handlers_for_event! event
 
     KittyEvents::HandleWorker.perform_later(event.to_s, object)
   end
@@ -41,15 +39,16 @@ module KittyEvents
   end
 
   def self.handle(event, object)
-    (handlers[event.to_sym] || []).each do |handler|
+    handlers_for_event(event) { [] }.each do |handler|
       handler.perform_later(object)
     end
   end
 
-  private_class_method
+  def self.handlers_for_event!(event)
+    handlers_for_event(event) { raise ArgumentError, "#{event} is not registered" }
+  end
 
-  def self.ensure_registered_event(event)
-    return if events.include? event.to_sym
-    raise ArgumentError, "#{event} is not registered"
+  def self.handlers_for_event(event, &block)
+    handlers.fetch(event.to_sym, &block);
   end
 end
