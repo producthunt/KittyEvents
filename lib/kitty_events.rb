@@ -26,8 +26,8 @@ module KittyEvents
   def self.subscribe(event, handler)
     ensure_registered_event(event)
 
-    handlers[event] ||= []
-    handlers[event] << handler
+    handlers[event.to_sym] ||= []
+    handlers[event.to_sym] << handler
   end
 
   def self.trigger(event, object)

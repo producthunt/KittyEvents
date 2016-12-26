@@ -52,6 +52,12 @@ describe KittyEvents do
       expect(described_class.handlers[:vote]).to eq [some_handler]
     end
 
+    it 'subscribes to an event (using string)' do
+      described_class.subscribe('vote', some_handler)
+
+      expect(described_class.handlers[:vote]).to eq [some_handler]
+    end
+
     it 'handles multiple handlers for a single event' do
       described_class.subscribe(:vote, some_handler)
       described_class.subscribe(:vote, another_handler)
