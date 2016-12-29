@@ -5,112 +5,147 @@ describe KittyEvents do
     expect(described_class::VERSION).not_to be nil
   end
 
-  after(:each) do
-    # Don't leak settings across tests
-    described_class.class_variable_set :@@handlers, {}
+  def events
+    @events ||= Module.new do
+      extend KittyEvents
+    end
   end
 
-  let(:some_handler) { class_double(ActiveJob::Base, perform_later: nil) }
+  let(:handler) { class_double(ActiveJob::Base, perform_later: nil) }
   let(:another_handler) { class_double(ActiveJob::Base, perform_later: nil) }
-  let(:some_object) { double('Some::Object') }
+  let(:object) { 'object' }
 
-  describe '.register' do
-    it 'adds event to list of events' do
-      described_class.register(:vote)
-      expect(described_class.registered).to include(:vote)
+  describe '.event' do
+    it 'subscribes to an event (using symbol for event name)' do
+      events.event(:vote, handler)
+
+      expect(events.handlers[:vote]).to eq [handler]
     end
 
-    it 'handles event names passed as a string' do
-      described_class.register('vote')
-      expect(described_class.registered).to include(:vote)
-    end
+    it 'subscribes to an event (using string for event name)' do
+      events.event('vote', handler)
 
-    it 'handles multiple events' do
-      described_class.register(:vote)
-      described_class.register(:post, :subscribe)
-
-      expect(described_class.registered.sort).to eq %i(vote post subscribe).sort
-    end
-
-    it 'does not add duplicates' do
-      described_class.register(:vote)
-      described_class.register(:vote)
-
-      expect(described_class.registered).to eq %i(vote)
-    end
-  end
-
-  describe '.subscribe' do
-    before do
-      described_class.register(:vote)
-    end
-
-    it 'subscribes to an event' do
-      described_class.subscribe(:vote, some_handler)
-
-      expect(described_class.handlers[:vote]).to eq [some_handler]
-    end
-
-    it 'subscribes to an event (using string)' do
-      described_class.subscribe('vote', some_handler)
-
-      expect(described_class.handlers[:vote]).to eq [some_handler]
+      expect(events.handlers[:vote]).to eq [handler]
     end
 
     it 'handles multiple handlers for a single event' do
-      described_class.subscribe(:vote, some_handler)
-      described_class.subscribe(:vote, another_handler)
+      events.event(:vote, [handler, another_handler])
 
-      expect(described_class.handlers[:vote]).to eq [some_handler, another_handler]
-    end
-
-    it 'raises an error when subscribing to an unregistered event' do
-      expect do
-        described_class.subscribe(:fake_event, some_handler)
-      end.to raise_error ArgumentError
+      expect(events.handlers[:vote]).to eq [handler, another_handler]
     end
 
     it 'raises an error when subscribing to invalid handler' do
-      expect do
-        described_class.subscribe(:vote, 'not a handler')
-      end.to raise_error ArgumentError
+      expect { events.event(:vote, 'not a handler') }.to raise_error ArgumentError
+    end
+
+    it 'raises an error when subscribe to event twice' do
+      events.event(:vote, handler)
+
+      expect { events.event(:vote, handler) }.to raise_error ArgumentError
     end
   end
 
   describe '.trigger' do
     before do
-      allow(described_class::HandleWorker).to receive(:perform_later)
-
-      described_class.register :vote
+      allow(events.handle_worker).to receive(:perform_later)
     end
 
-    it 'raises an error if event does not exist' do
-      expect do
-        described_class.trigger(:unregistered_event, some_handler)
-      end.to raise_error ArgumentError
+    it 'raises an error when event does not exist' do
+      expect { events.trigger(:unregistered_event, handler) }.to raise_error ArgumentError
     end
 
-    it 'handles event names pass as string' do
-      expect { described_class.trigger('vote', some_handler) }.not_to raise_error
+    it 'enqueues a job to handle the event (using string for event name)' do
+      events.event :vote, handler
+
+      events.trigger('vote', some: object)
+
+      expect(events.handle_worker).to have_received(:perform_later).with('vote', some: object)
     end
 
-    it 'enqueues a job to handle the event' do
-      described_class.trigger(:vote, some: some_object)
+    it 'enqueues a job to handle the event (using symbol for event name)' do
+      events.event :vote, handler
 
-      expect(described_class::HandleWorker).to have_received(:perform_later).with('vote', some: some_object)
+      events.trigger(:vote, some: object)
+
+      expect(events.handle_worker).to have_received(:perform_later).with('vote', some: object)
     end
   end
 
   describe '.handle' do
     it 'fans out event to each subscribed handler' do
-      described_class.register(:vote)
-      described_class.subscribe(:vote, some_handler)
-      described_class.subscribe(:vote, another_handler)
+      events.event(:vote, [handler, another_handler])
+      events.handle(:vote, object)
 
-      described_class.handle(:vote, some_object)
+      expect(handler).to have_received(:perform_later).with(object)
+      expect(another_handler).to have_received(:perform_later).with(object)
+    end
 
-      expect(some_handler).to have_received(:perform_later).with(some_object)
-      expect(another_handler).to have_received(:perform_later).with(some_object)
+    it 'does not raises when event does not exist' do
+      expect { events.handle(:unregistered_event, object) }.not_to raise_error
+    end
+  end
+
+  describe 'integration', active_job: :inline do
+    Recorder = Module.new
+
+    TestRegisterHandler = Class.new(ActiveJob::Base) do
+      self.queue_adapter = :inline
+
+      def perform(object)
+        Recorder.record(:register_handler, object)
+      end
+    end
+
+    TestVoteHandler1 = Class.new(ActiveJob::Base) do
+      self.queue_adapter = :inline
+
+      def perform(object)
+        Recorder.record(:vote_handler_1, object)
+      end
+    end
+
+    TestVoteHandler2 = Class.new(ActiveJob::Base) do
+      self.queue_adapter = :inline
+
+      def perform(object)
+        Recorder.record(:vote_handler_2, object)
+      end
+    end
+
+    class TestEvents
+      extend KittyEvents
+
+      handle_worker.queue_adapter = :inline
+      handle_worker.logger = nil
+
+      event :register, [
+        TestRegisterHandler
+      ]
+
+      event :vote, [
+        TestVoteHandler1,
+        TestVoteHandler2
+      ]
+    end
+
+    before do
+      allow(Recorder).to receive(:record)
+    end
+
+    it 'delivers vote events' do
+      TestEvents.trigger :vote, object
+
+      expect(Recorder).to have_received(:record).with :vote_handler_1, object
+      expect(Recorder).to have_received(:record).with :vote_handler_2, object
+      expect(Recorder).not_to have_received(:record).with :register_handler, object
+    end
+
+    it 'delivers register events' do
+      TestEvents.trigger :register, object
+
+      expect(Recorder).not_to have_received(:record).with :vote_handler_1, object
+      expect(Recorder).not_to have_received(:record).with :vote_handler_2, object
+      expect(Recorder).to have_received(:record).with :register_handler, object
     end
   end
 end
