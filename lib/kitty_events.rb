@@ -27,6 +27,10 @@ module KittyEvents
     mod.const_set 'HandleWorker', Class.new(::KittyEvents::HandleWorker)
   end
 
+  def handle_worker
+    self::HandleWorker
+  end
+
   def register(*event_names)
     event_names.each do |name|
       handlers[name.to_sym] ||= []
@@ -47,7 +51,7 @@ module KittyEvents
   def trigger(event, object)
     handlers_for_event! event
 
-    self::HandleWorker.perform_later(event.to_s, object)
+    handle_worker.perform_later(event.to_s, object)
   end
 
   def handle(event, object)

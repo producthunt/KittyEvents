@@ -145,8 +145,8 @@ describe KittyEvents do
     class TestEvents
       extend KittyEvents
 
-      HandleWorker.queue_adapter = :inline
-      HandleWorker.logger = nil
+      handle_worker.queue_adapter = :inline
+      handle_worker.logger = nil
 
       register :register, :vote
 
