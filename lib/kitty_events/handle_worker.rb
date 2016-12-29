@@ -1,4 +1,5 @@
 require 'active_job'
+require 'active_support/core_ext/module/introspection'
 
 module KittyEvents
   class HandleWorker < ActiveJob::Base

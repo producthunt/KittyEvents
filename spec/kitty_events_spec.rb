@@ -114,4 +114,66 @@ describe KittyEvents do
       expect(another_handler).to have_received(:perform_later).with(some_object)
     end
   end
+
+  describe 'integration', active_job: :inline do
+    Recorder = Module.new
+
+    TestRegisterHandler = Class.new(ActiveJob::Base) do
+      self.queue_adapter = :inline
+
+      def perform(object)
+        Recorder.record(:register_handler, object)
+      end
+    end
+
+    TestVoteHandler1 = Class.new(ActiveJob::Base) do
+      self.queue_adapter = :inline
+
+      def perform(object)
+        Recorder.record(:vote_handler_1, object)
+      end
+    end
+
+    TestVoteHandler2 = Class.new(ActiveJob::Base) do
+      self.queue_adapter = :inline
+
+      def perform(object)
+        Recorder.record(:vote_handler_2, object)
+      end
+    end
+
+    class TestEvents
+      extend KittyEvents
+
+      HandleWorker.queue_adapter = :inline
+      HandleWorker.logger = nil
+
+      register :register, :vote
+
+      subscribe :register, TestRegisterHandler
+
+      subscribe :vote, TestVoteHandler1
+      subscribe :vote, TestVoteHandler2
+    end
+
+    before do
+      allow(Recorder).to receive(:record)
+    end
+
+    it 'delivers vote events' do
+      TestEvents.trigger :vote, 'post_vote'
+
+      expect(Recorder).to have_received(:record).with :vote_handler_1, 'post_vote'
+      expect(Recorder).to have_received(:record).with :vote_handler_2, 'post_vote'
+      expect(Recorder).not_to have_received(:record).with :register_handler, 'post_vote'
+    end
+
+    it 'delivers register events' do
+      TestEvents.trigger :register, 'user'
+
+      expect(Recorder).not_to have_received(:record).with :vote_handler_1, 'user'
+      expect(Recorder).not_to have_received(:record).with :vote_handler_2, 'user'
+      expect(Recorder).to have_received(:record).with :register_handler, 'user'
+    end
+  end
 end
