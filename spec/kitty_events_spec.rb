@@ -6,12 +6,9 @@ describe KittyEvents do
   end
 
   def events
-    described_class
-  end
-
-  after(:each) do
-    # Don't leak settings across tests
-    events.class_variable_set :@@handlers, {}
+    @events ||= Module.new do
+      extend KittyEvents
+    end
   end
 
   let(:some_handler) { class_double(ActiveJob::Base, perform_later: nil) }
