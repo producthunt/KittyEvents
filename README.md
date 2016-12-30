@@ -1,6 +1,13 @@
 # :heart_eyes_cat: KittyEvents
 
-Super simple event system on top of ActiveJob.
+Super simple event system built on top of ActiveJob.
+
+KittyEvents implements the [publish/subscribe](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern) pattern using ActiveJob. You setup your events and list the subscribers for them. When an event is triggered, KittyEvents will fanout the event to each of your subscribers.
+
+### Why use this
+- Uses ActiveJob. No need to add a new dependency for pub/sub.
+- Reduce complexity/establish patterns. Can be used to replace `after_commit`'s. This creates easier to follow/read code. Less surprises = good!
+- Replace several `perform_later`'s with a single event `trigger`. Reducing the amount of I/O happening in request (less I/O = faster response times)
 
 ## Installation
 
@@ -12,15 +19,54 @@ gem 'kitty_events'
 
 And then execute:
 
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install kitty_events
+    $ bundle install
 
 ## Usage
 
-TODO: Write usage instructions here
+In Rails, setup your events and subscribers in an initializer.
+
+```Ruby
+# config/initializers/application_events.rb
+module ApplicationEvents
+  extend KittyEvents
+
+  event :user_signup, [
+    WelcomeEmailWorker,
+    WelcomeTweetWorker,
+    SyncProfileImageWorker,
+    ExampleWorker.set(wait: 5.minutes), # standard ActiveJob settings work as well!
+  ]
+  
+  event :user_upvote, [
+    SomeWorker,
+    AnotherWorker,
+  ]
+end
+```
+
+Each subscriber must be an ActiveJob and respond to `perform_later(object)`.
+
+```Ruby
+class ExampleWorker < ActiveJob::Base
+  def perform(user)
+    # do work
+  end
+end
+```
+
+Then in your application, to trigger an event. Do the following.
+
+```Ruby
+ApplicationEvents.trigger(:user_signup, user)
+```
+
+Using the above example, triggering this event would pass `user` to each of the subscribers defined in our initializer:
+```
+WelcomeEmailWorker,
+WelcomeTweetWorker,
+SyncProfileImageWorker,
+ExampleWorker.set(wait: 5.minutes)
+```
 
 ## Development
 
