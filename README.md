@@ -1,4 +1,5 @@
 # :heart_eyes_cat: KittyEvents
+[![Gem Version](https://badge.fury.io/rb/kitty_events.svg)](https://badge.fury.io/rb/kitty_events) [![Build Status](https://travis-ci.org/producthunt/KittyEvents.svg?branch=master)](https://travis-ci.org/producthunt/KittyEvents)
 
 Super simple event system built on top of ActiveJob.
 
