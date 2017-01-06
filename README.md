@@ -69,6 +69,27 @@ SyncProfileImageWorker,
 ExampleWorker.set(wait: 5.minutes)
 ```
 
+## Worker Configuration
+The worker is configurable via the initializer. Here are examples for catching errors and setting the queue.
+
+```Ruby
+# config/initializers/application_events.rb
+module ApplicationEvents
+  extend KittyEvents
+
+  event :user_signup, [
+    WelcomeEmailWorker,
+    WelcomeTweetWorker,
+  ]
+  
+  handle_worker.rescue_from ActiveJob::DeserializationError
+    # ignore all deserialization errors
+  end
+  
+  handle_worker.queue_as :events # use a specific queue
+end
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
