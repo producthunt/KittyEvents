@@ -27,7 +27,7 @@ module KittyEvents
   end
 
   def new_method
-    true
+    false
   end
 
   def handle_worker
