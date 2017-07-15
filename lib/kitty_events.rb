@@ -26,6 +26,10 @@ module KittyEvents
     mod.const_set 'HandleWorker', Class.new(::KittyEvents::HandleWorker)
   end
 
+  def new_method
+    true
+  end
+
   def handle_worker
     self::HandleWorker
   end
