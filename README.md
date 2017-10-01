@@ -82,8 +82,8 @@ module ApplicationEvents
     WelcomeTweetWorker,
   ]
   
-  handle_worker.rescue_from ActiveJob::DeserializationError
-    # ignore all deserialization errors
+  handle_worker.rescue_from ActiveJob::DeserializationError do |exception|
+    # handle deserialization errors
   end
   
   handle_worker.queue_as :events # use a specific queue
