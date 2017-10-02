@@ -4,6 +4,8 @@ FrozenStringLiteralComment:
   Enabled: false
 ClassVars:
   Enabled: false
+Metrics/BlockLength:
+  Max: 200
 Metrics/LineLength:
   Max: 140
 AllCops:
