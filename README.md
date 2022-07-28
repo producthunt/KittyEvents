@@ -24,10 +24,9 @@ And then execute:
 
 ## Usage
 
-In Rails, setup your events and subscribers in an initializer.
+In Rails, setup your events and subscribers.
 
 ```Ruby
-# config/initializers/application_events.rb
 module ApplicationEvents
   extend KittyEvents
 
@@ -37,13 +36,15 @@ module ApplicationEvents
     SyncProfileImageWorker,
     ExampleWorker.set(wait: 5.minutes), # standard ActiveJob settings work as well!
   ]
-  
+
   event :user_upvote, [
     SomeWorker,
     AnotherWorker,
   ]
 end
 ```
+
+*You can put this in `app/workers` or similar folder.*
 
 Each subscriber must be an ActiveJob and respond to `perform_later(object)`.
 
@@ -81,11 +82,11 @@ module ApplicationEvents
     WelcomeEmailWorker,
     WelcomeTweetWorker,
   ]
-  
+
   handle_worker.rescue_from ActiveJob::DeserializationError do |exception|
     # handle deserialization errors
   end
-  
+
   handle_worker.queue_as :events # use a specific queue
 end
 ```
